@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   }
 
   double elapsed = now_ns() - start;
-  printf("total: %zu\n", total);
+  printf("%zu\n", total);
   printf("%.3f ms\n", elapsed / 1e6);
   free(buffer);
   return 0;

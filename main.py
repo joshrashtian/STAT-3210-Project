@@ -29,8 +29,12 @@ def main():
 
     for lang, cmd in parameters.COMMANDS.items():
         for file in parameters.FILES:
+            if file is None:
+                print("error: file does not exist")
+                continue
+
             output = run(cmd + [f"text_files/{file}", str(parameters.ITERATIONS)])
-        print(lang, file, output)
+            print(lang + "\n" + output)
 
 
 if __name__ == "__main__":

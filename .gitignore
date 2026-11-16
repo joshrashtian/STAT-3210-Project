@@ -1,2 +1,7 @@
 # Google App Engine generated folder
 appengine-generated/
+
+.venv/
+bin/
+__pycache__/
+.DS_Store
