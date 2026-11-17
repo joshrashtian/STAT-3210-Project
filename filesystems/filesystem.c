@@ -1,47 +1,62 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#define BYTE_SIZE 512
 
-double now_ns(void) {
+#define CHUNK 65536
+#define WARMUP 3
+
+static uint64_t now_ns(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1e9 + ts.tv_nsec;
+  return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
 }
-int main(int argc, char **argv) {
 
+static size_t read_file(const char *path, char *buf) {
+  FILE *fp = fopen(path, "rb");
+  if (fp == NULL) {
+    perror(path);
+    exit(1);
+  }
+  size_t total = 0, n;
+  while ((n = fread(buf, 1, CHUNK, fp)) > 0)
+    total += n;
+  fclose(fp);
+  return total;
+}
+
+int main(int argc, char **argv) {
   if (argc < 3) {
     fprintf(stderr, "usage: %s <file> <iterations>\n", argv[0]);
     return 1;
   }
 
-  char *buffer = malloc(BYTE_SIZE + 1);
-  if (buffer == NULL) {
+  int iter = atoi(argv[2]);
+  if (iter <= 0) {
+    fprintf(stderr, "iterations must be > 0\n");
     return 1;
   }
 
-  int iter = atoi(argv[2]);
+  char *buf = malloc(CHUNK);
+  uint64_t *times = malloc((size_t)iter * sizeof *times);
+  if (buf == NULL || times == NULL)
+    return 1;
 
-  size_t total = 0;
-  double start = now_ns();
+  size_t size = 0;
+  for (int i = 0; i < WARMUP; i++) // untimed: warms the cache
+    size = read_file(argv[1], buf);
 
   for (int i = 0; i < iter; i++) {
-    FILE *fp = fopen(argv[1], "r");
-    if (fp == NULL) {
-      perror(argv[1]);
-      free(buffer);
-      return 1;
-    }
-
-    size_t n;
-    while ((n = fread(buffer, 1, BYTE_SIZE, fp)) > 0)
-      total += n;
-    fclose(fp);
+    uint64_t t0 = now_ns();
+    read_file(argv[1], buf);
+    times[i] = now_ns() - t0;
   }
 
-  double elapsed = now_ns() - start;
-  printf("%zu\n", total);
-  printf("%.3f ms\n", elapsed / 1e6);
-  free(buffer);
+  printf("%zu\n", size);
+  for (int i = 0; i < iter; i++)
+    printf("%llu\n", (unsigned long long)times[i]);
+
+  free(times);
+  free(buf);
   return 0;
 }

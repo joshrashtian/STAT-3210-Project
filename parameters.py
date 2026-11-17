@@ -5,5 +5,6 @@ COMMANDS: dict[str, list[str]] = {
 }
 
 ITERATIONS: int = 100
+REPEATS: int = 5
 
-FILES: list[str] = ["512.txt", "4096.txt"]
+FILES: list[str] = ["512.txt", "4096.txt", "65536.txt", "1048576.txt", "16777216.txt"]
